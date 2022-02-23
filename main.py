@@ -1,48 +1,37 @@
 import numpy as np
 from scipy.spatial import distance
 import scipy.linalg as lin_alg
-from qiskit.aqua.algorithms import VQE
+from qiskit.aqua.algorithms import VQE, NumPyEigensolver
 from qiskit import IBMQ, Aer
 from qiskit.aqua import QuantumInstance
 from qiskit.providers.aer.noise import NoiseModel
 from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
 from timeit import default_timer as timer
-import mda_trajectory_helper as a4md_traj_help
-from qiskit.aqua.components.optimizers import COBYLA, SPSA, SLSQP
-import os
-
-an_times = []
-an_write_times = []
-AA_per_seg=2
-n_processes=16
-n_atimes=1
-QUANTUM = False
+#import mda_trajectory_helper as a4md_traj_help
+from qiskit.aqua.components.optimizers import COBYLA
+from qiskit.aqua.operators import MatrixOperator, WeightedPauliOperator, op_converter
+from qiskit.chemistry import FermionicOperator
 
 ### NEEDED BY QUANTUM INITIALIZATION
 IBMQ.load_account()
 provider = IBMQ.get_provider(hub='ibm-q-research-2', group='vienna-uni-tech-1', project='main')
-backend = Aer.get_backend("qasm_simulator")
-device = provider.get_backend("ibm_perth")
-coupling_map = device.configuration().coupling_map
+backend_sim = Aer.get_backend("qasm_simulator")
+backend_real = provider.get_backend("ibm_perth")
+coupling_map = backend_real.configuration().coupling_map
 # Extracting noise model for error mitigation
-noise_model = NoiseModel.from_backend(device.properties())
-quantum_instance = QuantumInstance(backend=backend,
-                                   shots=8192,
+noise_model = NoiseModel.from_backend(backend_real)
+quantum_instance = QuantumInstance(backend=backend_sim,
+                                   shots=20000,
                                    noise_model=noise_model,
                                    coupling_map=coupling_map,
                                    measurement_error_mitigation_cls=CompleteMeasFitter,
                                    cals_matrix_refresh_period=30)
-optimizer = SPSA(maxiter=100)
+optimizer = COBYLA(maxiter=5000, tol=0.0001)
 ### END
 
 
-def extract_qubit_op(block_matrix):
-    pass
-
-def generate_var_form(qubit_op):
-    pass
-
-
+n_atimes = 100
+QUANTUM = False
 largest_eig_vals_by_frame = []
 def analyze(types, xpoints, ypoints, zpoints, box_points, step, optimizer = None, quantum_instance = None):
     print('-----======= Python : analyze ({})========-------'.format(step))
@@ -83,15 +72,15 @@ def analyze(types, xpoints, ypoints, zpoints, box_points, step, optimizer = None
 
     largest_eig_vals_by_frame.append(levs)
     # ---------============= analysis code goes here (end)   ===========-------------------
-    an_time = timer() - t
-    an_times.append(an_time)
+    #an_time = timer() - t
+    #an_times.append(an_time)
 
     t = timer()
     # ---------============= analysis output code goes here (start) ===========-------------------
 
     # ---------============= analysis output code goes here (end)   ===========-------------------
-    an_write_time = timer() - t
-    an_write_times.append(an_write_time)
+    #an_write_time = timer() - t
+    #an_write_times.append(an_write_time)
 
     # if step+1>=nsteps:
     #    print('------============ reached end of analysis ({}) ==========------------'.format(step))
@@ -138,13 +127,32 @@ def calc_eigval_quantum(segs, optimizer, quantum_instance):
     z2 = np.zeros((seg2_l, seg2_l))
     bpm = np.block([[z1, d], [dt, z2]])
 
-    qubit_op = extract_qubit_op(bpm)
-    variational_form = generate_var_form(qubit_op)
+    qubit_op = None
+    variational_form = None
     vqe = VQE(qubit_op, variational_form, optimizer=optimizer)
     ret = vqe.run(quantum_instance)
     vqe_result = np.real(ret['eigenvalue'])
     return vqe_result
 
+def test_quantum_eigenvalue():
+    dimensions = 2
+    rdist = np.random.rand(dimensions,dimensions)
+    rdistt = np.transpose(rdist)
+    z1 = np.zeros((dimensions,dimensions))
+    z2 = np.zeros((dimensions,dimensions))
+    in_matrix = np.block([[z1,rdist],[rdistt,z2]])
+    print(in_matrix)
+
+    #hamiltonian = FermionicOperator(h1=in_matrix)
+    #hamiltonian_qubit_op = hamiltonian.mapping(map_type='parity')
+    hamiltonian = MatrixOperator(in_matrix)
+    hamiltonian_qubit_op = op_converter.to_weighted_pauli_operator(hamiltonian)
+    vqe = VQE(operator=hamiltonian_qubit_op,quantum_instance=quantum_instance, optimizer=optimizer)
+    vqe_result = np.real(vqe.run(backend_sim)['eigenvalue'])
+    print("VQE eigenvalues: " +str(vqe_result))
+    print("MD eigenvalue: "+str(lin_alg.eigvalsh(in_matrix)))
 
 if __name__ == "__main__":
     print('starting ')
+
+    test_quantum_eigenvalue()
