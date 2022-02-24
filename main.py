@@ -10,6 +10,7 @@ from timeit import default_timer as timer
 #import mda_trajectory_helper as a4md_traj_help
 from qiskit.aqua.components.optimizers import COBYLA
 from qiskit.aqua.operators import MatrixOperator, WeightedPauliOperator, op_converter
+import math
 from qiskit.chemistry import FermionicOperator
 
 ### NEEDED BY QUANTUM INITIALIZATION
@@ -136,21 +137,32 @@ def calc_eigval_quantum(segs, optimizer, quantum_instance):
 
 def test_quantum_eigenvalue():
     dimensions = 2
-    rdist = np.random.rand(dimensions,dimensions)
-    rdistt = np.transpose(rdist)
-    z1 = np.zeros((dimensions,dimensions))
-    z2 = np.zeros((dimensions,dimensions))
-    in_matrix = np.block([[z1,rdist],[rdistt,z2]])
-    print(in_matrix)
+    classic = []
+    quantum = []
+    for i in range(1,100):
+        rdist = np.random.rand(dimensions,dimensions)
+        rdistt = np.transpose(rdist)
+        z1 = np.zeros((dimensions,dimensions))
+        z2 = np.zeros((dimensions,dimensions))
+        in_matrix = np.block([[z1,rdist],[rdistt,z2]])
+        print(in_matrix)
 
-    #hamiltonian = FermionicOperator(h1=in_matrix)
-    #hamiltonian_qubit_op = hamiltonian.mapping(map_type='parity')
-    hamiltonian = MatrixOperator(in_matrix)
-    hamiltonian_qubit_op = op_converter.to_weighted_pauli_operator(hamiltonian)
-    vqe = VQE(operator=hamiltonian_qubit_op,quantum_instance=quantum_instance, optimizer=optimizer)
-    vqe_result = np.real(vqe.run(backend_sim)['eigenvalue'])
-    print("VQE eigenvalues: " +str(vqe_result))
-    print("MD eigenvalue: "+str(lin_alg.eigvalsh(in_matrix)))
+        #hamiltonian = FermionicOperator(h1=in_matrix)
+        #hamiltonian_qubit_op = hamiltonian.mapping(map_type='parity')
+        hamiltonian = MatrixOperator(in_matrix)
+        hamiltonian_qubit_op = op_converter.to_weighted_pauli_operator(hamiltonian)
+        vqe = VQE(operator=hamiltonian_qubit_op,quantum_instance=quantum_instance, optimizer=optimizer)
+        vqe_result = np.real(vqe.run(backend_sim)['eigenvalue'])
+        print("VQE eigenvalues: " +str(vqe_result))
+        print("MD eigenvalue: "+str(lin_alg.eigvalsh(in_matrix)))
+
+        classic.append(lin_alg.eigvalsh(in_matrix)[0])
+        quantum.append(vqe_result)
+
+    MSE = np.square(np.subtract(classic,quantum)).mean()
+    RMSE = math.sqrt(MSE)
+    print("RMSE: "+str(RMSE))
+    print("NRMSE: "+str((RMSE/(max(classic)-min(classic)))*100))
 
 if __name__ == "__main__":
     print('starting ')
