@@ -5,7 +5,7 @@ This repo contains code and notebooks about Quantum Computing experiments.
 [![DOI](https://zenodo.org/badge/459065547.svg)](https://zenodo.org/badge/latestdoi/459065547)
 
 ## Acknowledgements ##
-We acknowledge the use of IBM Quantum services for this work. The views expressed are those of the authors, and do not reflect the official policy or position of IBM or the IBM Quantum team. (https://quantum-computing.ibm.com/)[IBM Quantum]
+We acknowledge the use of IBM Quantum services for this work. The views expressed are those of the authors, and do not reflect the official policy or position of IBM or the IBM Quantum team. https://quantum-computing.ibm.com/ 
 
 Machines used in this work:
 | ID | VERSION | PROCESSOR |
