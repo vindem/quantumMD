@@ -1,4 +1,4 @@
-# Impact of Hyperparameter Selection on VQE results: A Preliminary Study
+# Impact of Hyperparameter Selection on VQE
 
 This repo contains code and notebooks about Quantum Computing experiments.
 
