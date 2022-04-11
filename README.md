@@ -12,8 +12,11 @@ An example of performance of different PQC for variational algorithms
 
 ## Data ##
 * ibmq_qasm_simulator_rawdata.csv
+
 *Comparison of two different VQE methods (using different PQCs) on a simulated backend, single measurements of eigenvalues and runtime
+
 * ibmq_qasm_simulator_summary.csv
+
 *Comparison of two different VQE methods (using different PQCs) on a simulated backend, average runtime and nrmse of eigenvalue vs classic 
 
 
