@@ -11,6 +11,7 @@ Machines used in this work:
 | ID | VERSION | PROCESSOR |
 |----|---------|-----------|
 | ibmq_manila |1.0.29|Falcon r5.11L|
+| ibmq_santiago|1.4.1|Falcon r4L|
 
 ## Jupyter Notebooks: ##
 * quantumMD 
