@@ -20,15 +20,18 @@ A preliminary study of applying quantum computing to scientific computation
 An example of performance of different PQC for variational algorithms
 
 ## Data ##
-* ibmq_qasm_simulator_rawdata.csv
+Filename format: ALGORITHM_BACKEND_QUBITS_[RT-NRMSE|SUMMARY]
+* rt-nrmse: summary of the experiment with average runtime and normalized root mean square error between the value obtained on classic architecture and the value obtained with specific PQC;
+| PQC | AVG-RUNTIME | NRMSE |
+|-----|-------------|-------|
+| PQC name | Average RT for circuit | NRMSE for circuit |
 
-*Comparison of two different VQE methods (using different PQCs) on a simulated backend, single measurements of eigenvalues and runtime
-
-* ibmq_qasm_simulator_summary.csv
-
-*Comparison of two different VQE methods (using different PQCs) on a simulated backend, average runtime and nrmse of eigenvalue vs classic
-
-
+* rawdata: data of each execution of VQE over which rt-nrmse are calculated.
+|PQC0-RT|PQC0-EIG|...|PQCn-RT|PQCn-EIG|Classic-EIG|
+|-------|--------|---|-------|--------|-----------|
+| RT matrix #1 using PQC0 | EIG matrix #1 using PQC0 |...| RT matrix #1 using PQCn | EIG matrix #1 using PQCn | EIG classic |
+|.......|........|...|.......|........|...........|
+| RT matrix #m using PQC0 | EIG matrix #m using PQC0 |...| RT matrix #m using PQCn | EIG matrix #m using PQCn | EIG classic |
 
 
 
