@@ -22,12 +22,14 @@ An example of performance of different PQC for variational algorithms
 ## Data ##
 Filename format: ALGORITHM_BACKEND_QUBITS_[RT-NRMSE|SUMMARY]
 * rt-nrmse: summary of the experiment with average runtime and normalized root mean square error between the value obtained on classic architecture and the value obtained with specific PQC;
+
 | PQC | AVG-RUNTIME | NRMSE |
 |-----|-------------|-------|
 | PQC name | Average RT for circuit | NRMSE for circuit |
 
 * rawdata: data of each execution of VQE over which rt-nrmse are calculated.
-|PQC0-RT|PQC0-EIG|...|PQCn-RT|PQCn-EIG|Classic-EIG|
+
+| PQC0-RT | PQC0-EIG | ... | PQCn-RT | PQCn-EIG | Classic-EIG |
 |-------|--------|---|-------|--------|-----------|
 | RT matrix #1 using PQC0 | EIG matrix #1 using PQC0 |...| RT matrix #1 using PQCn | EIG matrix #1 using PQCn | EIG classic |
 |.......|........|...|.......|........|...........|
