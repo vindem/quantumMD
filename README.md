@@ -31,9 +31,9 @@ Filename format: ALGORITHM_BACKEND_QUBITS_[RT-NRMSE|SUMMARY]
 
 | PQC0-RT | PQC0-EIG | ... | PQCn-RT | PQCn-EIG | Classic-EIG |
 |-------|--------|---|-------|--------|-----------|
-| RT matrix #1 using PQC0 | EIG matrix #1 using PQC0 |...| RT matrix #1 using PQCn | EIG matrix #1 using PQCn | EIG classic |
+| RT matrix #1 using PQC0 | EIG matrix #1 using PQC0 |...| RT matrix #1 using PQCn | EIG matrix #1 using PQCn | EIG matrix #1 classic |
 |.......|........|...|.......|........|...........|
-| RT matrix #m using PQC0 | EIG matrix #m using PQC0 |...| RT matrix #m using PQCn | EIG matrix #m using PQCn | EIG classic |
+| RT matrix #m using PQC0 | EIG matrix #m using PQC0 |...| RT matrix #m using PQCn | EIG matrix #m using PQCn | EIG matrix #m classic |
 
 
 
