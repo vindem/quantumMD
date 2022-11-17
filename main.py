@@ -1,34 +1,40 @@
+import os
+
 import numpy as np
 from qiskit.circuit.library import RealAmplitudes
-from qiskit.quantum_info import PauliTable
+import os
+
 from scipy.spatial import distance
 import scipy.linalg as lin_alg
-from qiskit.aqua.algorithms import VQE, NumPyEigensolver
+
+from quantum_api import calc_eigval_quantum, calculate_distance_quantum
+
 from qiskit import IBMQ, Aer
-from qiskit.aqua import QuantumInstance
 from qiskit.providers.aer.noise import NoiseModel
 from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
 from timeit import default_timer as timer
 from statistics import mean
 import time
-#import mda_trajectory_helper as a4md_traj_help
-from qiskit.aqua.components.optimizers import COBYLA, SPSA
-from qiskit.aqua.operators import MatrixOperator, WeightedPauliOperator, op_converter
-from qiskit.opflow.primitive_ops import MatrixOp
+import mda_trajectory_helper as a4md_traj_help
+
 import math
 import csv
-from datetime import datetime
-from qiskit.chemistry import FermionicOperator
-from qiskit.opflow import Z, I
-from qiskit.providers import JobStatus
-from qiskit.quantum_info.operators import Operator, Pauli
-from qiskit.opflow.state_fns import OperatorStateFn
-### NEEDED BY QUANTUM INITIALIZATION
-
-
 
 ### END
 
+def extract_bpm(segs, dist_function):
+    seg1 = segs[0]
+    seg2 = segs[1]
+    seg1_l = len(seg1)
+    seg2_l = len(seg2)
+    d = dist_function(seg1, seg2)
+    dt = np.transpose(d)
+    z1 = np.zeros((seg1_l, seg1_l))
+    z2 = np.zeros((seg2_l, seg2_l))
+    bpm = np.block([[z1, d], [dt, z2]])
+
+def classic_euclidean_distance(A,B):
+    distance.cdist(A, B, 'sqeuclidean')
 
 n_atimes = 100
 QUANTUM = False
@@ -60,14 +66,16 @@ def analyze(types, xpoints, ypoints, zpoints, box_points, step, optimizer = None
             segs.append([seg1, seg2])
 
     #with mp.Pool(processes=n_processes) as pool:
-      #  for i in range(n_atimes):
-       #     result = pool.map_async(calc_eigval, segs)
-        #    levs = result.get()
+    #    for i in range(n_atimes):
+    #        result = pool.map_async(calc_eigval, segs)
+    #        levs = result.get()
 
     for i in range(n_atimes):
         if QUANTUM:
+            bpm = extract_bpm(segs, calculate_distance_quantum)
             levs = calc_eigval_quantum(segs, optimizer, quantum_instance)
         else:
+            bpm = extract_bpm(segs, classic_euclidean_distance)
             levs = calc_eigval_classic(segs)
 
     largest_eig_vals_by_frame.append(levs)
@@ -115,94 +123,6 @@ def calc_eigval_classic(segs):
     bpm = np.block([[z1,d],[dt,z2]])
     lev = lin_alg.eigvalsh(bpm)[-1]
     return lev
-
-def calc_eigval_quantum(segs, optimizer, quantum_instance):
-    seg1 = segs[0]
-    seg2 = segs[1]
-    seg1_l = len(seg1)
-    seg2_l = len(seg2)
-    d = distance.cdist(seg1, seg2, 'sqeuclidean')
-    dt = np.transpose(d)
-    z1 = np.zeros((seg1_l, seg1_l))
-    z2 = np.zeros((seg2_l, seg2_l))
-    bpm = np.block([[z1, d], [dt, z2]])
-
-    qubit_op = None
-    variational_form = None
-    vqe = VQE(qubit_op, variational_form, optimizer=optimizer)
-    ret = vqe.run(quantum_instance)
-    vqe_result = np.real(ret['eigenvalue'])
-    return vqe_result
-
-
-
-
-
-
-def test_quantum_eigenvalue(q_shots = 8192, opt_iter = 100):
-    classic = []
-    quantum = []
-    opt_times = []
-    tot_times = []
-
-    IBMQ.load_account()
-    provider = IBMQ.get_provider(hub='ibm-q-research-2', group='vienna-uni-tech-1', project='main')
-
-    backend_sim = provider.backend.ibmq_qasm_simulator
-    backend_real = provider.get_backend("ibm_perth")
-    coupling_map = backend_real.configuration().coupling_map
-    # Extracting noise model for error mitigation
-    noise_model = NoiseModel.from_backend(backend_real)
-    quantum_instance = QuantumInstance(backend=backend_sim,
-                                       shots=q_shots,
-                                       noise_model=noise_model,
-                                       coupling_map=coupling_map,
-                                       measurement_error_mitigation_cls=CompleteMeasFitter,
-                                       cals_matrix_refresh_period=30)
-    optimizer = COBYLA(maxiter=opt_iter, tol=0.0001)
-    num_qubits = 2
-    # definition of the ansatz
-    best_ansatz_ever = RealAmplitudes(num_qubits, reps=2)
-
-    dimensions = 2
-    for i in range(1,20):
-        print('Iteration '+str(i))
-        rdist = np.random.rand(dimensions,dimensions)
-        rdistt = np.transpose(rdist)
-        z1 = np.zeros((dimensions, dimensions))
-        z2 = np.zeros((dimensions, dimensions))
-        in_matrix = np.block([[z1, rdist], [rdistt, z2]])
-        #print(in_matrix)
-
-        #hamiltonian_qubit_op = MatrixOp(in_matrix)
-        #print(hamiltonian_qubit_op.num_qubits)
-        #hamiltonian = FermionicOperator(h1=in_matrix)
-        #hamiltonian_qubit_op = hamiltonian.mapping(map_type='parity')
-        hamiltonian = MatrixOperator(in_matrix)
-        hamiltonian_qubit_op = op_converter.to_weighted_pauli_operator(hamiltonian)
-
-        vqe = VQE(operator=hamiltonian_qubit_op,var_form=best_ansatz_ever,quantum_instance=quantum_instance, optimizer=optimizer)
-
-        start = time.time()
-        vqe_result = np.real(vqe.run(backend_real)['eigenvalue'])
-        end = time.time()
-
-        tot_time = end-start
-        print("VQE eigenvalues: " + str(vqe_result))
-        print("MD eigenvalue: " + str(lin_alg.eigvalsh(in_matrix)))
-
-        classic.append(lin_alg.eigvalsh(in_matrix)[0])
-        quantum.append(vqe_result)
-        tot_times.append(tot_time)
-
-    MSE = np.square(np.subtract(classic,quantum)).mean()
-    RMSE = math.sqrt(MSE)
-    NRMSE = RMSE/(max(classic)-min(classic))*100
-    print("RMSE: "+str(RMSE))
-    print("NRMSE: "+str(NRMSE))
-
-
-    return [q_shots, opt_iter, NRMSE, mean(tot_times)]
 
 if __name__ == "__main__":
     print('starting ')
