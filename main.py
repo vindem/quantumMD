@@ -1,17 +1,15 @@
 import os
+import sys
 
 import numpy as np
-from qiskit.circuit.library import RealAmplitudes
 import os
 
 from scipy.spatial import distance
 import scipy.linalg as lin_alg
+from sklearn.metrics import mean_squared_error
 
 from quantum_api import calc_eigval_quantum, calculate_distance_quantum
 
-from qiskit import IBMQ, Aer
-from qiskit.providers.aer.noise import NoiseModel
-from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
 from timeit import default_timer as timer
 from statistics import mean
 import time
@@ -19,9 +17,21 @@ import mda_trajectory_helper as a4md_traj_help
 
 import math
 import csv
+import importlib
 
-### END
+#QUANTUM PART
+from qiskit import IBMQ, Aer
+from qiskit.providers.aer.noise import NoiseModel
+from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
+from qiskit.circuit.library import RealAmplitudes
+from qiskit.algorithms.optimizers import COBYLA, GradientDescent, SPSA
+#END
 
+an_times = []
+an_write_times = []
+n_processes=4
+n_atimes=1
+global QUANTUM
 def extract_bpm(segs, dist_function):
     seg1 = segs[0]
     seg2 = segs[1]
@@ -32,28 +42,28 @@ def extract_bpm(segs, dist_function):
     z1 = np.zeros((seg1_l, seg1_l))
     z2 = np.zeros((seg2_l, seg2_l))
     bpm = np.block([[z1, d], [dt, z2]])
+    return bpm
 
 def classic_euclidean_distance(A,B):
-    distance.cdist(A, B, 'sqeuclidean')
+    return distance.cdist(A, B, 'sqeuclidean')
 
-n_atimes = 100
-QUANTUM = False
+
 largest_eig_vals_by_frame = []
-def analyze(types, xpoints, ypoints, zpoints, box_points, step, optimizer = None, quantum_instance = None):
+def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None, backend=None, optimizer=None):
     print('-----======= Python : analyze ({})========-------'.format(step))
     print(f"Usable cpus = {os.sched_getaffinity(0)}")
 
     global atom_index_groups
     t = timer()
     # ---------============= analysis code goes here (start) ===========-------------------
-    points = np.vstack((xpoints, ypoints, zpoints)).T
-    print(points.shape)
+    points = a4md_traj_help.get_coordinates(ref_file, traj_file, step)
+    #print(points.shape)
     if atom_index_groups is None:
-        top = a4md_traj_help.get_topology("./reference.pdb")
+        top = a4md_traj_help.get_topology(ref_file)
         # atom_groups = a4md_traj_help.get_atoms_groups(top, group_method='alpha_carbon')
         atom_groups = a4md_traj_help.get_atoms_groups(top, group_method='backbone')
         print('Number of carbon alpha atoms : {}'.format(len(atom_groups)))
-        atom_index_groups = a4md_traj_help.get_segments(atom_groups, segment_length=AA_per_seg, include_last=True)
+        atom_index_groups = a4md_traj_help.get_segments(atom_groups, segment_length=seg_len, include_last=True)
         print('Number of carbon alpha atoms groups : {}'.format(len(atom_index_groups)))
 
     levs = []
@@ -73,15 +83,17 @@ def analyze(types, xpoints, ypoints, zpoints, box_points, step, optimizer = None
     for i in range(n_atimes):
         if QUANTUM:
             bpm = extract_bpm(segs, calculate_distance_quantum)
-            levs = calc_eigval_quantum(segs, optimizer, quantum_instance)
+            num_qubits = 0
+            ansatz = ansatz_class(num_qubits)
+            levs = calc_eigval_quantum(bpm, ansatz, backend, optimizer)
         else:
             bpm = extract_bpm(segs, classic_euclidean_distance)
-            levs = calc_eigval_classic(segs)
+            levs = calc_eigval_classic(bpm)
 
     largest_eig_vals_by_frame.append(levs)
     # ---------============= analysis code goes here (end)   ===========-------------------
-    #an_time = timer() - t
-    #an_times.append(an_time)
+    an_time = timer() - t
+    an_times.append(an_time)
 
     t = timer()
     # ---------============= analysis output code goes here (start) ===========-------------------
@@ -123,15 +135,64 @@ def calc_eigval_classic(segs):
     bpm = np.block([[z1,d],[dt,z2]])
     lev = lin_alg.eigvalsh(bpm)[-1]
     return lev
-
+# python calc_leigval_bipartite_multithread_offline.py reference.pdb traj_comp.xtc 5 8
 if __name__ == "__main__":
-    print('starting ')
-    outfile = open('runtime_tests_real.csv','w')
-    writer = csv.writer(outfile)
-    opt_iters = [50,100,500,1000]
-    writer.writerow(['shots', 'opt_iter', 'nrmse', 'tot_time'])
-    for it in opt_iters:
-        ret = test_quantum_eigenvalue(opt_iter=it)
-        writer.writerow(ret)
+    print('--------=========== Running analysis in python ===========-------------')
+    ref_file = sys.argv[1]
+    traj_file = sys.argv[2]
+    step = int(sys.argv[3])
+    seg_len = int(sys.argv[4])
+    QUANTUM = eval(sys.argv[5])
+    iter = int(sys.argv[6])
 
-    outfile.close()
+    q_results = {}
+    OPT_ITERS = [20]
+    # 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000]
+    # OPT_ITERS = [1, 2]
+
+    if QUANTUM:
+        OPTIMIZERS = [COBYLA(20), GradientDescent(20), SPSA(20)]
+        ansatz = RealAmplitudes(1,1)
+        backend_name = ""
+
+
+        for optimizer in OPTIMIZERS:
+            for opt_iter in OPT_ITERS:
+                optimizer.set_options(maxiter=opt_iter)
+                key = (optimizer.__class__.__name__, opt_iter)
+                q_eigenvalues = []
+                for i in range(0, iter):
+                    q_eig = analyze(ref_file, traj_file, step, seg_len, ansatz, backend_name, optimizer)
+                    q_eigenvalues.append(q_eig)
+                    q_results[key] = q_eigenvalues
+
+
+        classic_LEBM = analyze(ref_file, traj_file, step, seg_len)
+
+        # postprocessing
+        mse_data = {}
+        for k in q_results.keys():
+            if k[0] not in mse_data:
+                mse_data[k[0]] = []
+            mse = mean_squared_error([classic_LEBM] * iter, q_results[k])
+            mse_data[k[0]].append(mse)
+
+        # writing on file
+        header = ['Opt-iter']
+        for k in mse_data.keys():
+            header.append(k)
+
+        with open('outfile.csv', 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow(header)
+            j = 0
+            for i in OPT_ITERS:
+                row = [str(i)]
+                for k in mse_data.keys():
+                    row.append(str(mse_data[k][j]))
+                writer.writerow(row)
+                j = j + 1
+
+            file.close()
+    else:
+        analyze(ref_file, traj_file, step, seg_len)
