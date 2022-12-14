@@ -64,7 +64,7 @@ class VectorAmplitudeEncoder:
 
     def psi_reg(self,A,B):
         psi = []
-        vec = self.vec(A,B)
+        vec = self.vector_padding(A,B)
         # psi = np.empty([len(self.vec()[0]), len(self.vec()[0]) + len(self.vec()[1])])
         for i in range(len(vec[0])):
             psi.append((vec[0][i]) / (self.norm(A,B)[0][i] * np.sqrt(2)))

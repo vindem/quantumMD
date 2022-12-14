@@ -22,7 +22,6 @@ import importlib
 #QUANTUM PART
 from qiskit import IBMQ, Aer
 from qiskit.providers.aer.noise import NoiseModel
-from qiskit.ignis.mitigation.measurement import CompleteMeasFitter
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.algorithms.optimizers import COBYLA, GradientDescent, SPSA
 #END
@@ -33,11 +32,16 @@ n_processes=4
 n_atimes=1
 global QUANTUM
 def extract_bpm(segs, dist_function):
-    seg1 = segs[0]
-    seg2 = segs[1]
+    seg1 = segs[0][0]
+    seg2 = segs[1][0]
+
     seg1_l = len(seg1)
     seg2_l = len(seg2)
     d = dist_function(seg1, seg2)
+    #print(d.shape)
+    #d = distance.cdist(np.array(seg1), np.array(seg2), 'sqeuclidean')
+    #d = distance.cdist(np.array(seg1), np.array(seg2), 'sqeuclidean')
+    #d = distance.cdist(segs, 'sqeuclidean')
     dt = np.transpose(d)
     z1 = np.zeros((seg1_l, seg1_l))
     z2 = np.zeros((seg2_l, seg2_l))
@@ -45,10 +49,13 @@ def extract_bpm(segs, dist_function):
     return bpm
 
 def classic_euclidean_distance(A,B):
-    return distance.cdist(A, B, 'sqeuclidean')
+    arr = np.array(distance.cdist(A, B, 'sqeuclidean'))
+    print(arr.shape)
+    return arr
 
 
 largest_eig_vals_by_frame = []
+atom_index_groups = None
 def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None, backend=None, optimizer=None):
     print('-----======= Python : analyze ({})========-------'.format(step))
     print(f"Usable cpus = {os.sched_getaffinity(0)}")
@@ -69,6 +76,7 @@ def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None
     levs = []
     segs = []
     nsegs = len(atom_index_groups)
+
     for i in range(nsegs):
         for j in range(i + 1, nsegs):
             seg1 = points[atom_index_groups[i]]
@@ -83,12 +91,12 @@ def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None
     for i in range(n_atimes):
         if QUANTUM:
             bpm = extract_bpm(segs, calculate_distance_quantum)
-            num_qubits = 0
-            ansatz = ansatz_class(num_qubits)
+            num_qubits = int(math.log2(bpm.shape[0]))
+            ansatz = globals()[ansatz_class](num_qubits)
             levs = calc_eigval_quantum(bpm, ansatz, backend, optimizer)
         else:
             bpm = extract_bpm(segs, classic_euclidean_distance)
-            levs = calc_eigval_classic(bpm)
+            levs = lin_alg.eigvalsh(bpm)[-1]
 
     largest_eig_vals_by_frame.append(levs)
     # ---------============= analysis code goes here (end)   ===========-------------------
@@ -124,10 +132,11 @@ def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None
 def calc_eigval_classic(segs):
     #print(f"{_location()}, affinity before thread_foo:"
     #      f" {os.sched_getaffinity(0)}")
-    seg1 = segs[0]
-    seg2 = segs[1]
+    seg1 = segs[0][0]
+    seg2 = segs[1][1]
     seg1_l = len(seg1)
     seg2_l = len(seg2)
+    print(np.array(segs).shape)
     d = distance.cdist(seg1, seg2, 'sqeuclidean')
     dt = np.transpose(d)
     z1 = np.zeros((seg1_l,seg1_l))
@@ -143,29 +152,30 @@ if __name__ == "__main__":
     step = int(sys.argv[3])
     seg_len = int(sys.argv[4])
     QUANTUM = eval(sys.argv[5])
-    iter = int(sys.argv[6])
 
     q_results = {}
     OPT_ITERS = [20]
     # 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000]
     # OPT_ITERS = [1, 2]
 
-    if QUANTUM:
-        OPTIMIZERS = [COBYLA(20), GradientDescent(20), SPSA(20)]
-        ansatz = RealAmplitudes(1,1)
-        backend_name = ""
+    if not QUANTUM:
+        analyze(ref_file, traj_file, step, seg_len)
+    else:
+        #OPTIMIZERS = [COBYLA(20), GradientDescent(20), SPSA(20)]
+        ansatz = "RealAmplitudes"
+        backend_name = "ibmq_qasm_simulator"
+        opt_iter = 20
+        optimizer = COBYLA(opt_iter)
 
 
-        for optimizer in OPTIMIZERS:
-            for opt_iter in OPT_ITERS:
-                optimizer.set_options(maxiter=opt_iter)
-                key = (optimizer.__class__.__name__, opt_iter)
-                q_eigenvalues = []
-                for i in range(0, iter):
-                    q_eig = analyze(ref_file, traj_file, step, seg_len, ansatz, backend_name, optimizer)
-                    q_eigenvalues.append(q_eig)
-                    q_results[key] = q_eigenvalues
+        key = (optimizer.__class__.__name__, opt_iter)
+        q_eigenvalues = []
 
+        q_eig = analyze(ref_file, traj_file, step, seg_len, True, ansatz, backend_name, optimizer)
+        q_eigenvalues.append(q_eig)
+        q_results[key] = q_eigenvalues
+
+        #https://stackoverflow.com/questions/4821104/dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported-module
 
         classic_LEBM = analyze(ref_file, traj_file, step, seg_len)
 
@@ -194,5 +204,3 @@ if __name__ == "__main__":
                 j = j + 1
 
             file.close()
-    else:
-        analyze(ref_file, traj_file, step, seg_len)

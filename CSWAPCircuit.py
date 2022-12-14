@@ -39,14 +39,18 @@ class CSWAPCircuit:
 
     def execute_swap_test(self, A, B, noise_model):
         vector_preprocessor = VectorAmplitudeEncoder(A,B)
-        qd = [0] * len(vector_preprocessor.psi_reg(A,B))
-        for i in range(len(vector_preprocessor.psi_reg(A,B))):
-            norm_factor = vector_preprocessor.norm_factor(A,B)[i]
-            qc = self._init_cswap_circuit(
-                vector_preprocessor.phi_reg(A, B)[i],
-                vector_preprocessor.psi_reg(A, B)[i],
-            )
-            qd[i] = self.run_cswap_circuit(qc, norm_factor, noise_model)
+        rows = len(vector_preprocessor.psi_reg(A,B))
+        cols = len(vector_preprocessor.psi_reg(A,B))
+        qd = [0] * rows * cols
+        qd = np.reshape(qd, (8,8))
+        for i in range(rows):
+            for j in range(cols):
+                norm_factor = vector_preprocessor.norm_factor(A,B)[i]
+                qc = self._init_cswap_circuit(
+                    vector_preprocessor.phi_reg(A, B)[i],
+                    vector_preprocessor.psi_reg(A, B)[j],
+                )
+            qd[i][j] = self.run_cswap_circuit(qc, norm_factor, noise_model)
 
         return qd
 
