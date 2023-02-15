@@ -158,7 +158,7 @@ if __name__ == "__main__":
     # 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000]
     # OPT_ITERS = [1, 2]
 
-    if not QUANTUM:
+    if not QUANTUM
         analyze(ref_file, traj_file, step, seg_len)
     else:
         #OPTIMIZERS = [COBYLA(20), GradientDescent(20), SPSA(20)]
