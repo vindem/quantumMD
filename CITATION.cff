@@ -39,10 +39,6 @@ conference:
     country: "US"
 start: 346
 end: 356
-doi: 10.1109/eScience55777.2022.00048
-identifiers:
-  - type: doi
-    value: 10.5281/zenodo.6603624
 repository-code: 'https://github.com/vindem/quantumMD/'
 abstract: >-
   Since we are entering the Post-Moore Law era and
