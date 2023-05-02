@@ -1,26 +1,3 @@
-Please cite this work using the following bibtex entry:
-
-@inproceedings{DBLP:conf/eScience/CranganoreMBDD22,
-  author       = {Sandeep Suresh Cranganore and
-                  Vincenzo De Maio and
-                  Ivona Brandic and
-                  Tu Mai Anh Do and
-                  Ewa Deelman},
-  title        = {Molecular Dynamics Workflow Decomposition for Hybrid Classic/Quantum
-                  Systems},
-  booktitle    = {18th {IEEE} International Conference on e-Science, e-Science 2022,
-                  Salt Lake City, UT, USA, October 11-14, 2022},
-  pages        = {346--356},
-  publisher    = {{IEEE}},
-  year         = {2022},
-  url          = {https://doi.org/10.1109/eScience55777.2022.00048},
-  doi          = {10.1109/eScience55777.2022.00048},
-  timestamp    = {Tue, 21 Mar 2023 20:57:08 +0100},
-  biburl       = {https://dblp.org/rec/conf/eScience/CranganoreMBDD22.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-
-
 # Impact of Hyperparameter Selection on VQE
 
 This repo contains code and notebooks about Quantum Computing experiments.
