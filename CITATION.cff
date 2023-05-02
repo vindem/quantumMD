@@ -34,9 +34,9 @@ title: "Molecular Dynamics Workflow Decomposition for Hybrid Classic/Quantum Sys
 year: 2022
 collection-title: "2022 IEEE 18th International Conference on e-Science (e-Science)"
 conference:
-  - name: IEEE 18th International Conference on e-Science
-    location: Salt Lake City (USA)
-    country: US
+  - name: "IEEE 18th International Conference on e-Science"
+    location: "Salt Lake City"
+    country: "US"
 start: 346
 end: 356
 doi: 10.1109/eScience55777.2022.00048
