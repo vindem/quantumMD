@@ -4,7 +4,7 @@
 cff-version: 1.2.0
 message: >-
   If you use this software, please cite it using the
-  metadata from this file
+  metadata from this file (bibtex entry: https://dblp.org/rec/conf/eScience/CranganoreMBDD22.html?view=bibtex)
 references:
   - type: conference-paper
   authors:
