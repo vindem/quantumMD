@@ -28,12 +28,12 @@ references:
     family-names: Deelman
     email: deelman@usc.isi.edu
     affiliation: University of Southern California
-title: "Molecular Dynamics Workflow Decomposition for Hybrid Classic/Quantum Systems"
-year: 2022
-collection-title: "2022 IEEE 18th International Conference on e-Science (e-Science)"
-conference:
-  - name: "IEEE 18th International Conference on e-Science"
-    location: "Salt Lake City"
-    country: "US"
-start: 346
-end: 356
+  title: "Molecular Dynamics Workflow Decomposition for Hybrid Classic/Quantum Systems"
+  year: 2022
+  collection-title: "2022 IEEE 18th International Conference on e-Science (e-Science)"
+  conference:
+    - name: "IEEE 18th International Conference on e-Science"
+      location: "Salt Lake City"
+      country: "US"
+  start: 346
+  end: 356
