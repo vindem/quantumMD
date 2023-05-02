@@ -38,30 +38,3 @@ conference:
     country: "US"
 start: 346
 end: 356
-repository-code: 'https://github.com/vindem/quantumMD/'
-abstract: >-
-  Since we are entering the Post-Moore Law era and
-  consequently the limit of Von Neumann's architecture, the
-  scientific community is looking for alternatives to
-  satisfy the growing computing power demands of scientific
-  applications. Quantum computing promises to achieve a
-  computational advantage over the classic Von Neumann
-  architecture. However, the limited capabilities of current
-  noisy intermediate-scale quantum (NISQ) devices require
-  quantum computers to interoperate with classic systems,
-  forming the so-called hybrid quantum systems. Research on
-  hybrid quantum systems led to the design of Variational
-  Quantum Algorithms, currently the most promising way to
-  move towards quantum advantage. However, execution time
-  and accuracy of variational quantum algorithms are
-  affected by different hyperparameters, including selected
-  cost functions and parametrized quantum circuits.
-  Consequently, providing developers with methods to select
-  the right set of parameters is of paramount importance. In
-  this work, we provide a formal method for the selection of
-  hyperparameters in variational quantum algorithms, which
-  will support quantum algorithms developers in the design
-  of quantum applications, and evaluate it on a real-world
-  scientific application, showing a reduction of error up to
-  31%.
-license: MIT
