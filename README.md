@@ -1,3 +1,10 @@
+This code has been developed in the scope of the following work:
+
+Sandeep Suresh Cranganore, Vincenzo De Maio, Ivona Brandic, Tu Mai Anh Do, Ewa Deelman:
+Molecular Dynamics Workflow Decomposition for Hybrid Classic/Quantum Systems. e-Science 2022: 346-356
+
+Please cite accordingly: https://dblp.org/rec/conf/eScience/CranganoreMBDD22.html?view=bibtex
+
 # Impact of Hyperparameter Selection on VQE
 
 This repo contains code and notebooks about Quantum Computing experiments.
