@@ -1,10 +1,61 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
 cff-version: 1.2.0
-message: "If you use these data, please cite it as below."
+title: Quantum MD Workflow
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file, using this bibtex entry:
+  https://dblp.org/rec/conf/eScience/CranganoreMBDD22.html?view=bibtex
+type: software
 authors:
-  - family-names: De Maio
-    given-names: Vincenzo
-    orcid: https://orcid.org/0000-0002-7352-3895
-title: "Preliminary results on IBMQ."
-version: 0.0.1
-doi: 10.5281/zenodo.6420869
-date-released: 2022-02-25
+  - given-names: Cranganore
+    family-names: Sandeep Suresh
+    email: s.cranganore@fz-juelich.de
+    affiliation: Juelich Forschungszentrum
+  - given-names: Vincenzo
+    family-names: De Maio
+    email: vincenzo@ec.tuwien.ac.at
+    affiliation: Vienna University of Technology
+    orcid: 'https://orcid.org/0000-0002-7352-3895'
+  - given-names: Tu
+    family-names: Mai Ahn Do
+    affiliation: University of Southern California
+  - given-names: Ivona
+    family-names: Brandic
+    email: ivona@ec.tuwien.ac.at
+    affiliation: Vienna University of Technology
+  - given-names: Ewa
+    family-names: Deelman
+    email: deelman@usc.isi.edu
+    affiliation: University of Southern California
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.6603624
+repository-code: 'https://github.com/vindem/quantumMD/'
+abstract: >-
+  Since we are entering the Post-Moore Law era and
+  consequently the limit of Von Neumann's architecture, the
+  scientific community is looking for alternatives to
+  satisfy the growing computing power demands of scientific
+  applications. Quantum computing promises to achieve a
+  computational advantage over the classic Von Neumann
+  architecture. However, the limited capabilities of current
+  noisy intermediate-scale quantum (NISQ) devices require
+  quantum computers to interoperate with classic systems,
+  forming the so-called hybrid quantum systems. Research on
+  hybrid quantum systems led to the design of Variational
+  Quantum Algorithms, currently the most promising way to
+  move towards quantum advantage. However, execution time
+  and accuracy of variational quantum algorithms are
+  affected by different hyperparameters, including selected
+  cost functions and parametrized quantum circuits.
+  Consequently, providing developers with methods to select
+  the right set of parameters is of paramount importance. In
+  this work, we provide a formal method for the selection of
+  hyperparameters in variational quantum algorithms, which
+  will support quantum algorithms developers in the design
+  of quantum applications, and evaluate it on a real-world
+  scientific application, showing a reduction of error up to
+  31%.
+license: MIT
