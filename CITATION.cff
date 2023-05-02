@@ -32,8 +32,8 @@ references:
   year: 2022
   collection-title: "2022 IEEE 18th International Conference on e-Science (e-Science)"
   conference:
-    - name: "IEEE 18th International Conference on e-Science"
-      location: "Salt Lake City"
-      country: "US"
+    - name: IEEE 18th International Conference on e-Science
+      location: Salt Lake City
+      country: US
   start: 346
   end: 356
