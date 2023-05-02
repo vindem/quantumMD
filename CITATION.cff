@@ -7,8 +7,9 @@ message: >-
   If you use this software, please cite it using the
   metadata from this file, using this bibtex entry:
   https://dblp.org/rec/conf/eScience/CranganoreMBDD22.html?view=bibtex
-type: software
-authors:
+references:
+  - type: conference-paper
+  authors:
   - given-names: Cranganore
     family-names: Sandeep Suresh
     email: s.cranganore@fz-juelich.de
@@ -29,6 +30,17 @@ authors:
     family-names: Deelman
     email: deelman@usc.isi.edu
     affiliation: University of Southern California
+title: "Molecular Dynamics Workflow Decomposition for Hybrid Classic/Quantum Systems"
+year: 2022
+collection-title: "2022 IEEE 18th International Conference on e-Science (e-Science)"
+conference:
+  - name: IEEE 18th International Conference on e-Science
+    location: Salt Lake City (USA)
+    country: US
+start: 346
+end: 356
+doi: 10.1109/eScience55777.2022.00048
+      
 identifiers:
   - type: doi
     value: 10.5281/zenodo.6603624
