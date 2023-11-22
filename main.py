@@ -130,7 +130,7 @@ def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None
 
     print('-----======= Python : analyze done for ({}, time: {} s)========-------'.format(step, an_time))
 
-    return 0
+    return levs
 
 def calc_eigval_classic(segs):
     #print(f"{_location()}, affinity before thread_foo:"
@@ -181,6 +181,8 @@ if __name__ == "__main__":
         #https://stackoverflow.com/questions/4821104/dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported-module
 
         classic_LEBM = analyze(ref_file, traj_file, step, seg_len)
+
+        print(classic_LEBM)
 
         print("Classic: "+str(classic_LEBM))
         print("Quantum: "+str(q_eig))
