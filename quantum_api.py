@@ -60,8 +60,8 @@ def calc_eigval_quantum(bpm, ansatz, backend, optimizer):
     x0 = 2 * np.pi * np.random.random(num_params)
 
     with Session(service=service, backend=backend):
-        #estimator = Estimator()
-        estimator = AQTEstimator(backend=backend)
+        estimator = Estimator()
+        #estimator = AQTEstimator(backend=backend)
         start = time.time()
         res = minimize(
             cost_function,
