@@ -1,6 +1,8 @@
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, execute, transpile
 from VectorAmplitudeEncoder import VectorAmplitudeEncoder
 from qiskit_aqt_provider.primitives import AQTSampler
+from qiskit.primitives import Sampler
+from qiskit_ibm_runtime import Options
 import numpy as np
 
 class CSWAPCircuit:
@@ -38,7 +40,8 @@ class CSWAPCircuit:
 
     def run_cswap_circuit(self, qc, norm, noise_model):
         #job = execute(qc, self._backend, shots=self._shots, optimization_level=3, noise_model=None)
-        sampler = AQTSampler(self._backend)
+        #sampler = AQTSampler(self._backend)
+        sampler = Sampler()
         result = sampler.run(qc).result()
         #result = job.result()
         countsqd = result.quasi_dists[0]
