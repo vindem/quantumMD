@@ -21,10 +21,13 @@ import importlib
 
 #QUANTUM PART
 from qiskit import IBMQ, Aer
-from qiskit.providers.aer.noise import NoiseModel
+#from qiskit.providers.aer.noise import NoiseModel
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.algorithms.optimizers import COBYLA, GradientDescent, SPSA
+from qiskit_aqt_provider import AQTProvider
 #END
+
+
 
 an_times = []
 an_write_times = []
@@ -158,7 +161,7 @@ if __name__ == "__main__":
     # 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000]
     # OPT_ITERS = [1, 2]
 
-    if not QUANTUM
+    if not QUANTUM:
         analyze(ref_file, traj_file, step, seg_len)
     else:
         #OPTIMIZERS = [COBYLA(20), GradientDescent(20), SPSA(20)]
@@ -179,15 +182,20 @@ if __name__ == "__main__":
 
         classic_LEBM = analyze(ref_file, traj_file, step, seg_len)
 
+        print("Classic: "+str(classic_LEBM))
+        print("Quantum: "+str(q_eig))
+
         # postprocessing
+        """
         mse_data = {}
         for k in q_results.keys():
             if k[0] not in mse_data:
                 mse_data[k[0]] = []
-            mse = mean_squared_error([classic_LEBM] * iter, q_results[k])
+            mse = mean_squared_error([classic_LEBM] * opt_iter, q_results[k])
             mse_data[k[0]].append(mse)
 
         # writing on file
+        
         header = ['Opt-iter']
         for k in mse_data.keys():
             header.append(k)
@@ -204,3 +212,4 @@ if __name__ == "__main__":
                 j = j + 1
 
             file.close()
+        """
