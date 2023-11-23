@@ -1,10 +1,39 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
 cff-version: 1.2.0
-message: "If you use these data, please cite it as below."
-authors:
-  - family-names: De Maio
-    given-names: Vincenzo
-    orcid: https://orcid.org/0000-0002-7352-3895
-title: "Preliminary results on IBMQ."
-version: 0.0.1
-doi: 10.5281/zenodo.6420869
-date-released: 2022-02-25
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file (bibtex entry: https://dblp.org/rec/conf/eScience/CranganoreMBDD22.html?view=bibtex)
+references:
+  - type: conference-paper
+  authors:
+  - given-names: Cranganore
+    family-names: Sandeep Suresh
+    email: s.cranganore@fz-juelich.de
+    affiliation: Juelich Forschungszentrum
+  - given-names: Vincenzo
+    family-names: De Maio
+    email: vincenzo@ec.tuwien.ac.at
+    affiliation: Vienna University of Technology
+    orcid: 'https://orcid.org/0000-0002-7352-3895'
+  - given-names: Tu
+    family-names: Mai Ahn Do
+    affiliation: University of Southern California
+  - given-names: Ivona
+    family-names: Brandic
+    email: ivona@ec.tuwien.ac.at
+    affiliation: Vienna University of Technology
+  - given-names: Ewa
+    family-names: Deelman
+    email: deelman@usc.isi.edu
+    affiliation: University of Southern California
+  title: "Molecular Dynamics Workflow Decomposition for Hybrid Classic/Quantum Systems"
+  year: 2022
+  collection-title: "2022 IEEE 18th International Conference on e-Science (e-Science)"
+  conference:
+    - name: IEEE 18th International Conference on e-Science
+      location: Salt Lake City
+      country: US
+  start: 346
+  end: 356
