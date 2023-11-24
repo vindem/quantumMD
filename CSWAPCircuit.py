@@ -6,11 +6,7 @@ from qiskit_ibm_runtime import Options
 import numpy as np
 
 class CSWAPCircuit:
-    def __init__(self, aux, qr1n, qr2n, crn, backend, shots):
-        #self._aux = aux
-        #self._qr1n = qr1n
-        #self._qr2n = qr2n
-        #self._crn = crn
+    def __init__(self, backend, shots):
         self._backend = backend
         self._shots = shots
 
@@ -23,16 +19,11 @@ class CSWAPCircuit:
 
         qc.prepare_state(a, q2[0:1])
         qc.prepare_state(b, q3[0:3])
-        #qc.barrier()
+        qc.barrier()
         qc.h(q1[0])
-        #qc.cswap(q1[0], q2[0], q3[0])
-        qc.cx(q2[0], q3[0])
-        qc.cx(q1[0], q2[0])
-        qc.cx(q2[0], q3[0])
-        qc.cx(q1[0], q2[0])
-        qc.cx(q2[0], q3[0])
+        qc.cswap(q1[0], q2[0], q3[0])
         qc.h(q1[0])
-        #qc.barrier()
+        qc.barrier()
         qc.measure(q1, c)
 
         return transpile(qc, self._backend, optimization_level=3)
@@ -40,9 +31,15 @@ class CSWAPCircuit:
 
     def run_cswap_circuit(self, qc, norm, noise_model):
         #job = execute(qc, self._backend, shots=self._shots, optimization_level=3, noise_model=None)
+        options = Options()
+        # options.transpilation.skip_transpilation = True
+        options.execution.shots = 10000
+        options.optimization_level = 3
+        options.resilience_level = 3
+
         sampler = AQTSampler(self._backend)
         #sampler = Sampler()
-        result = sampler.run(qc).result()
+        result = sampler.run(qc, shots=self._shots).result()
         #result = job.result()
         countsqd = result.quasi_dists[0]
         qdsquared = abs((4 * norm ** 2 * ((countsqd[0] / self._shots) - 0.5)))
@@ -61,13 +58,6 @@ class CSWAPCircuit:
                 qd[i][j] = self.run_cswap_circuit(qc, norm_factor, noise_model)
 
         return qd
-
-        """
-        return [self._init_cswap_circuit(vector_preprocessor.phi_reg(A,B)[i],
-                                  vector_preprocessor.psi_reg(A,B)[i],
-                                  vector_preprocessor.norm_factor(A,B)[i],
-                                         noise_model) for i in range(len(vector_preprocessor.psi_reg(A,B)))]
-        """
 
     def encode_atom_segments(self, A, B, encoder):
         encoded_atoms = encoder(A, B)

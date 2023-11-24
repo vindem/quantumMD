@@ -12,6 +12,7 @@ from qiskit_aqt_provider import AQTProvider
 from qiskit_aqt_provider.primitives import AQTEstimator
 from qiskit.quantum_info import Operator
 from scipy.optimize import minimize
+from qiskit.algorithms.optimizers import COBYLA
 
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
@@ -75,7 +76,7 @@ def calculate_distance_quantum(A, B):
     #noise_model = NoiseModel.from_backend(provider.backend.ibmq_quito)
     provider = AQTProvider("i_che_token")
     backend = provider.get_backend("offline_simulator_no_noise")
-    cswap_circuit = CSWAPCircuit(1, 1, 3, 1, backend, 200)
+    cswap_circuit = CSWAPCircuit(backend, 200)
     quantum_ED = cswap_circuit.execute_swap_test(A, B)
     arr = np.array(quantum_ED)
     #print(arr.shape)
@@ -125,10 +126,11 @@ def calc_eigval_quantum(bpm, ansatz, backend, optimizer):
     """
     improved_ansatz = ansatz
     num_params = improved_ansatz.num_parameters
-    #x0 = (np.max(qubit_op) - np.min(qubit_op)) * np.random.random(num_params)
+    #x0 = - (np.max(qubit_op) - np.min(qubit_op)) * np.random.random(num_params) * 10.0
     #x0 = np.max(np.real(qubit_op)) * np.random.random(num_params)
 
-    x0 = 2 * np.pi * np.random.random(num_params) * 10.0
+    x0 = [0] * num_params
+    #x0 = np.random.random(num_params)
     print("x0" + str(x0))
     options = Options()
     #options.transpilation.skip_transpilation = True
@@ -146,8 +148,9 @@ def calc_eigval_quantum(bpm, ansatz, backend, optimizer):
             x0,
             args=(improved_ansatz, qubit_op, estimator),
             method="cobyla",
-            options={"maxiter":1000}
+            options={"maxiter":1000, "tol":0.1}
         )
         end = time.time()
-        print("FINAL: "+ str(np.real(res['x'])))
-        return [max(np.real(res['x'])), end - start]
+
+        print("FINAL: "+ str(np.real(-res.fun)))
+        return [-(np.real(res.fun)), end - start]

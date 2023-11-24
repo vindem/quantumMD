@@ -94,16 +94,17 @@ def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None
     for i in range(n_atimes):
         if QUANTUM:
             bpm = extract_bpm(segs, calculate_distance_quantum)
+            #bpm = extract_bpm(segs, classic_euclidean_distance)
             num_qubits = int(math.log2(bpm.shape[0]))
             ansatz = globals()[ansatz_class](num_qubits)
             levs = calc_eigval_quantum(bpm, ansatz, backend, optimizer)
-            #print("QUANTUM bpm: "+str(bpm))
-            print("QUANTUM levs: "+str(levs))
+            print("QUANTUM bpm: "+str(bpm))
+            #print("QUANTUM levs: "+str(levs))
         else:
             bpm = extract_bpm(segs, classic_euclidean_distance)
             levs = lin_alg.eigvalsh(bpm)[-1]
-            #print("CLASSIC bpm: " + str(bpm))
-            print("CLASSIC levs: " + str(levs))
+            print("CLASSIC bpm: " + str(bpm))
+            #print("CLASSIC levs: " + str(levs))
 
 
 
@@ -171,7 +172,7 @@ if __name__ == "__main__":
         analyze(ref_file, traj_file, step, seg_len)
     else:
         #OPTIMIZERS = [COBYLA(20), GradientDescent(20), SPSA(20)]
-        ansatz = "ExcitationPreserving"
+        ansatz = "EfficientSU2"
         backend_name = "ibmq_qasm_simulator"
         opt_iter = 20
         optimizer = COBYLA(opt_iter)
