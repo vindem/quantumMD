@@ -1,14 +1,20 @@
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, execute, transpile
 from VectorAmplitudeEncoder import VectorAmplitudeEncoder
 from qiskit_aqt_provider.primitives import AQTSampler
+from qiskit_aqt_provider.aqt_job import AQTJob
 from qiskit.primitives import Sampler
 from qiskit_ibm_runtime import Options
 import numpy as np
+from config import Config
+from JobPersistenceManager import JobPersistenceManager
+import quantum_api
 
+job_ids = set()
 class CSWAPCircuit:
     def __init__(self, backend, shots):
         self._backend = backend
         self._shots = shots
+        self._show_figure = True
 
     def _init_cswap_circuit(self, a, b):
         q1 = QuantumRegister(1, name='control_0')
@@ -36,11 +42,26 @@ class CSWAPCircuit:
         options.execution.shots = 10000
         options.optimization_level = 3
         options.resilience_level = 3
-
-        sampler = AQTSampler(self._backend)
-        #sampler = Sampler()
-        result = sampler.run(qc, shots=self._shots).result()
+        distance_configuration = Config.execution_setup['execution_setup']['dist_calc'][0]
+        if distance_configuration['provider'] == 'AQT':
+            sampler = AQTSampler(self._backend)
+        else:
+            sampler = Sampler()
+        try:
+            job = sampler.run(qc, shots=self._shots)
+            if distance_configuration['persistence']:
+                persistence_manager = JobPersistenceManager()
+                persistence_manager.add_id(job.job_id())
+            result = job.result()
+            if distance_configuration['persistence']:
+                persistence_manager.remove_id(job.job_id())
         #result = job.result()
+        except TimeoutError:
+            if distance_configuration['persistence']:
+                job_ids = persistence_manager.active_jobs()
+                for job_id in job_ids:
+                    restored_job = AQTJob.restore(job_id, access_token=distance_configuration['token'])
+                    result = restored_job.result()
         countsqd = result.quasi_dists[0]
         qdsquared = abs((4 * norm ** 2 * ((countsqd[0] / self._shots) - 0.5)))
         qd = np.sqrt(qdsquared)

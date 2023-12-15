@@ -1,0 +1,28 @@
+{
+	"execution_setup": {
+		"dist_calc":
+		[
+			{
+				"quantum": "True",
+				"provider": "Aer",
+				"type": "superconducting",
+				"name": "aer_simulator",
+				"token": "ANY"
+			}
+		],
+		"eigenvalues":
+		[
+			{
+			"quantum": "True",
+			"provider": "Aer",
+			"persistence": "True",
+			"type": "superconducting",
+			"name": "aer_simulator",
+			"token": "ANY",
+			"ansatz": "EfficientSU2",
+			"optimizer": "cobyla",
+			"opt_iters": 1000 
+			}
+		]	
+	}
+}

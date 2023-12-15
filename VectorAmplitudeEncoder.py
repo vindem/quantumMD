@@ -46,6 +46,7 @@ class VectorAmplitudeEncoder:
 
         vecA_norm = [np.linalg.norm(vec[0][i]) for i in range(len(vec[0]))]
         vecB_norm = [np.linalg.norm(vec[1][i]) for i in range(len(vec[0]))]
+
         return [vecA_norm, vecB_norm]
 
     # The norm factor, ideally is used to normalize the quantum register with 3 qubits.

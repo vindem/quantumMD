@@ -14,10 +14,13 @@ from timeit import default_timer as timer
 from statistics import mean
 import time
 import mda_trajectory_helper as a4md_traj_help
-
+import json
 import math
 import csv
 import importlib
+import json
+from config import Config
+from JobPersistenceManager import JobPersistenceManager
 
 #QUANTUM PART
 from qiskit import IBMQ, Aer
@@ -28,16 +31,16 @@ from qiskit_aqt_provider import AQTProvider
 #END
 
 
-
+global config_data
 an_times = []
 an_write_times = []
 n_processes=4
-n_atimes=1
-global QUANTUM
+n_atimes=10
+
 def extract_bpm(segs, dist_function):
+    print("Extracting distance matrix")
     seg1 = segs[0][0]
     seg2 = segs[1][0]
-
     seg1_l = len(seg1)
     seg2_l = len(seg2)
     d = dist_function(seg1, seg2)
@@ -49,6 +52,7 @@ def extract_bpm(segs, dist_function):
     z1 = np.zeros((seg1_l, seg1_l))
     z2 = np.zeros((seg2_l, seg2_l))
     bpm = np.block([[z1, d], [dt, z2]])
+    #print(bpm.shape)
     return bpm
 
 def classic_euclidean_distance(A,B):
@@ -59,7 +63,7 @@ def classic_euclidean_distance(A,B):
 
 largest_eig_vals_by_frame = []
 atom_index_groups = None
-def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None, backend=None, optimizer=None):
+def analyze(ref_file, traj_file, step, seg_len, json_file):
     print('-----======= Python : analyze ({})========-------'.format(step))
     print(f"Usable cpus = {os.sched_getaffinity(0)}")
 
@@ -90,23 +94,25 @@ def analyze(ref_file, traj_file, step, seg_len, QUANTUM=False, ansatz_class=None
     #    for i in range(n_atimes):
     #        result = pool.map_async(calc_eigval, segs)
     #        levs = result.get()
+    #f = open(json_file, "r")
+    #data = json.loads(f.read())
+
+    #print(data)
 
     for i in range(n_atimes):
-        if QUANTUM:
-            bpm = extract_bpm(segs, calculate_distance_quantum)
-            #bpm = extract_bpm(segs, classic_euclidean_distance)
+        destination = 'quantum' if config_data['dist_calc'][0]['quantum'] else 'classic'
+        print("Starting "+destination+ " execution")
+        dist_func = calculate_distance_quantum if config_data['dist_calc'][0]['quantum'] else classic_euclidean_distance
+        bpm = extract_bpm(segs, dist_func)
+        #bpm = extract_bpm(segs, classic_euclidean_distance)
+        if config_data['dist_calc'][0]['quantum']:
             num_qubits = int(math.log2(bpm.shape[0]))
-            ansatz = globals()[ansatz_class](num_qubits)
-            levs = calc_eigval_quantum(bpm, ansatz, backend, optimizer)
-            print("QUANTUM bpm: "+str(bpm))
-            #print("QUANTUM levs: "+str(levs))
-        else:
-            bpm = extract_bpm(segs, classic_euclidean_distance)
-            levs = lin_alg.eigvalsh(bpm)[-1]
-            print("CLASSIC bpm: " + str(bpm))
-            #print("CLASSIC levs: " + str(levs))
+            print("Inferred number of qubits: "+ str(num_qubits))
+            #ansatz = globals()[ansatz_class](num_qubits)
 
-
+        destination = 'quantum' if config_data['eigenvalues'][0]['quantum'] else 'classic'
+        print("Calculating " + destination + " Eigenvalues:")
+        levs = calc_eigval_quantum(bpm, json_file) if config_data['eigenvalues'][0]['quantum'] else lin_alg.eigvalsh(bpm)[-1]
 
     largest_eig_vals_by_frame.append(levs)
     # ---------============= analysis code goes here (end)   ===========-------------------
@@ -161,62 +167,42 @@ if __name__ == "__main__":
     traj_file = sys.argv[2]
     step = int(sys.argv[3])
     seg_len = int(sys.argv[4])
-    QUANTUM = eval(sys.argv[5])
+    json_file = str(sys.argv[5])
 
     q_results = {}
-    OPT_ITERS = [20]
+    #OPT_ITERS = [20]
     # 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000]
     # OPT_ITERS = [1, 2]
+    config_data = Config(json_file).execution_setup['execution_setup']
+    #if not QUANTUM:
+    q_eig = analyze(ref_file, traj_file, step, seg_len, json_file)
 
-    if not QUANTUM:
-        analyze(ref_file, traj_file, step, seg_len)
-    else:
+    classic_LEBM = analyze(ref_file, traj_file, step, seg_len, json_file)
+
+    print("Classic: "+str(classic_LEBM))
+    print("Quantum: "+str(q_eig))
+    job_persistance_manager = JobPersistenceManager()
+    job_persistance_manager.clear_all()
+    #else:
         #OPTIMIZERS = [COBYLA(20), GradientDescent(20), SPSA(20)]
-        ansatz = "EfficientSU2"
-        backend_name = "ibmq_qasm_simulator"
-        opt_iter = 20
-        optimizer = COBYLA(opt_iter)
+    #    ansatz = "EfficientSU2"
+    #    backend_name = "ibmq_qasm_simulator"
+    #    opt_iter = 20
+    #    optimizer = COBYLA(opt_iter)
 
 
-        key = (optimizer.__class__.__name__, opt_iter)
-        q_eigenvalues = []
+    #    key = (optimizer.__class__.__name__, opt_iter)
+    #    q_eigenvalues = []
 
-        q_eig = analyze(ref_file, traj_file, step, seg_len, True, ansatz, backend_name, optimizer)
-        q_eigenvalues.append(q_eig)
-        q_results[key] = q_eigenvalues
+    #    q_eig = analyze(ref_file, traj_file, step, seg_len, True, ansatz, backend_name, optimizer)
+    #    q_eigenvalues.append(q_eig)
+    #    q_results[key] = q_eigenvalues
 
         #https://stackoverflow.com/questions/4821104/dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported-module
 
-        classic_LEBM = analyze(ref_file, traj_file, step, seg_len)
+    #    classic_LEBM = analyze(ref_file, traj_file, step, seg_len)
 
         #print("Classic: "+str(classic_LEBM))
         #print("Quantum: "+str(q_eig))
 
         # postprocessing
-        """
-        mse_data = {}
-        for k in q_results.keys():
-            if k[0] not in mse_data:
-                mse_data[k[0]] = []
-            mse = mean_squared_error([classic_LEBM] * opt_iter, q_results[k])
-            mse_data[k[0]].append(mse)
-
-        # writing on file
-        
-        header = ['Opt-iter']
-        for k in mse_data.keys():
-            header.append(k)
-
-        with open('outfile.csv', 'w') as file:
-            writer = csv.writer(file)
-            writer.writerow(header)
-            j = 0
-            for i in OPT_ITERS:
-                row = [str(i)]
-                for k in mse_data.keys():
-                    row.append(str(mse_data[k][j]))
-                writer.writerow(row)
-                j = j + 1
-
-            file.close()
-        """
