@@ -1,0 +1,27 @@
+{
+	"execution_setup": {
+		"dist_calc":
+		[
+			{
+			"quantum": "True",
+			"provider": "IBM",
+			"type": "superconducting",
+			"name": "ibmq_qasm_simulator",
+			"token": "ANY"
+			}
+		],
+		"eigenvalues":
+		[
+			{
+			"quantum": "True",
+			"provider": "IBM",
+			"type": "superconducting",
+			"name": "ibmq_qasm_simulator",
+			"token": "ANY",
+			"ansatz": "EfficientSU2",
+			"optimizer": "cobyla",
+			"opt_iters": 1000 
+			}
+		]	
+	}
+}

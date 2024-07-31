@@ -1,0 +1,29 @@
+{
+	"execution_setup": {
+		"dist_calc":
+		[
+			{
+				"quantum": "True",
+				"provider": "AQT",
+				"type": "ion traps",
+				"name": "offline_simulator_no_noise",
+				"token": "ANY",
+				"persistence": "True"
+			}
+		],
+		"eigenvalues":
+		[
+			{
+				"quantum": "True",
+				"provider": "AQT",
+				"type": "ion traps",
+				"name": "offline_simulator_no_noise",
+				"token": "ANY",
+				"ansatz": "EfficientSU2",
+				"optimizer": "cobyla",
+				"opt_iters": 1000,
+				"persistence": "True"
+			}
+		]	
+	}
+}
