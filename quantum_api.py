@@ -1,27 +1,22 @@
-from qiskit.algorithms.minimum_eigen_solvers import VQE
+from qiskit_algorithms.minimum_eigensolvers import VQE
+from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 import numpy as np
-from qiskit.opflow import MatrixOp
 from CSWAPCircuit import CSWAPCircuit
 from qiskit.providers import JobStatus
-from qiskit import IBMQ
 import time
-from qiskit import IBMQ, Aer
+from qiskit_aer import Aer
 from qiskit_ibm_runtime import QiskitRuntimeService, Estimator, Session, Options
-from qiskit.primitives import Estimator
-from qiskit.providers.aer.noise import NoiseModel
+#from qiskit.primitives import Estimator
+from qiskit_aer.noise import NoiseModel
 from qiskit_aqt_provider import AQTProvider
 from qiskit_aqt_provider.primitives import AQTEstimator
-from qiskit.quantum_info import Operator
+from qiskit.quantum_info import Operator, SparsePauliOp
 from scipy.optimize import minimize
 from config import Config
-from qiskit.algorithms.optimizers import COBYLA
 import math
-from qiskit.transpiler import PassManager
-from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit_ibm_runtime.transpiler.passes.scheduling import ALAPScheduleAnalysis, PadDynamicalDecoupling
-from qiskit.circuit.library import XGate
-from qiskit.circuit.library import *
 from JobPersistenceManager import JobPersistenceManager
+from qiskit.compiler.transpiler import transpile
+from qiskit.circuit.library import EfficientSU2
 
 callback_dict = {
     "prev_vector": None,
@@ -39,9 +34,10 @@ def setup_backend_for_task(task_name):
             backend = provider.get_backend(name=task_setup['name'])
             return backend
         case 'IBM':
-            IBMQ.load_account()
-            provider = IBMQ.get_provider(hub='ibm-q-research-2', group='vienna-uni-tech-1', project='main')
-            backend = provider.get_backend(name=task_setup['name'])
+            service = QiskitRuntimeService(channel='ibm_cloud',token='4ipDXUzuzfPZz3IKv8xhW_3tfLX6E87v9yOandkuC8aR',
+                                           instance='crn:v1:bluemix:public:quantum-computing:us-east:a/27d177ba64364d5a8e719dea80d8f354:eb8386a7-4196-43bd-a9c4-3a2c5041864a::')
+            #provider = IBMQ.get_provider(hub='ibm-q-research-2', group='tuwien-1', project='main')
+            backend = service.backend(name=task_setup['name'])
             return backend
         case _:
             raise Exception("Unknown Provider!")
@@ -112,7 +108,7 @@ def calc_eigval_quantum(bpm, filename):
     print("Starting VQE.")
     eigenvalue_configuration = Config.execution_setup['execution_setup']['eigenvalues'][0]
     print("Target machine: " + eigenvalue_configuration['name'] + ", " + eigenvalue_configuration['type'])
-    qubit_op = Operator(-bpm)
+    qubit_op = SparsePauliOp.from_operator(-bpm)
     #backend = Aer.get_backend('aer_simulator')
     backend = setup_backend_for_task('eigenvalues')
     #vqe = VQE(qubit_op, variational_form, optimizer=optimizer)
@@ -138,6 +134,7 @@ def calc_eigval_quantum(bpm, filename):
 
 
     improved_ansatz = globals()[eigenvalue_configuration['ansatz']](int(math.log2(bpm.shape[0])))
+    improved_ansatz = transpile(improved_ansatz, backend=backend)
     num_params = improved_ansatz.num_parameters
     #x0 = - (np.max(qubit_op) - np.min(qubit_op)) * np.random.random(num_params) * 10.0
     #x0 = np.max(np.real(qubit_op)) * np.random.random(num_params)
@@ -157,10 +154,11 @@ def calc_eigval_quantum(bpm, filename):
         from qiskit_aqt_provider.aqt_job import AQTJob
         estimator = AQTEstimator(backend=backend)
     elif eigenvalue_configuration['provider'] == 'IBM':
-        estimator = Estimator(options={"optimization_level":3, "resilience_level": 3})
+        estimator = Estimator(backend=backend, options={"optimization_level":3, "resilience_level": 3})
     else:
-        estimator = Estimator(options={"optimization_level": 3, "resilience_level": 3})
+        estimator = Estimator(backend=backend, options={"optimization_level": 3, "resilience_level": 3})
     start = time.time()
+    qubit_op = qubit_op.apply_layout(improved_ansatz.layout)
     res = minimize(
         cost_function,
         x0,

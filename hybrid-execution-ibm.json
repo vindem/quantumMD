@@ -6,8 +6,9 @@
 			"quantum": "True",
 			"provider": "IBM",
 			"type": "superconducting",
-			"name": "ibmq_qasm_simulator",
-			"token": "ANY"
+			"name": "ibm_brisbane",
+			"token": #,
+				"persistence": "False"
 			}
 		],
 		"eigenvalues":
@@ -16,11 +17,12 @@
 			"quantum": "True",
 			"provider": "IBM",
 			"type": "superconducting",
-			"name": "ibmq_qasm_simulator",
-			"token": "ANY",
+			"name": "ibm_brisbane",
+			"token": #,
 			"ansatz": "EfficientSU2",
 			"optimizer": "cobyla",
-			"opt_iters": 1000 
+			"opt_iters": 1000,
+				"persistence": "False"
 			}
 		]	
 	}

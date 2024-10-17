@@ -22,15 +22,6 @@ import json
 from config import Config
 from JobPersistenceManager import JobPersistenceManager
 
-#QUANTUM PART
-from qiskit import IBMQ, Aer
-#from qiskit.providers.aer.noise import NoiseModel
-from qiskit.circuit.library import RealAmplitudes, EfficientSU2, PauliTwoDesign, ExcitationPreserving
-from qiskit.algorithms.optimizers import COBYLA, GradientDescent, SPSA
-from qiskit_aqt_provider import AQTProvider
-#END
-
-
 global config_data
 an_times = []
 an_write_times = []

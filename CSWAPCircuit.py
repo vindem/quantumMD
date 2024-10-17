@@ -1,4 +1,4 @@
-from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, execute, transpile
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister, transpile
 from VectorAmplitudeEncoder import VectorAmplitudeEncoder
 from qiskit_aqt_provider.primitives import AQTSampler
 from qiskit_aqt_provider.aqt_job import AQTJob
@@ -32,14 +32,15 @@ class CSWAPCircuit:
         qc.barrier()
         qc.measure(q1, c)
 
-        return transpile(qc, self._backend, optimization_level=3)
+        return qc
 
 
     def run_cswap_circuit(self, qc, norm, noise_model):
         #job = execute(qc, self._backend, shots=self._shots, optimization_level=3, noise_model=None)
+
         options = Options()
         # options.transpilation.skip_transpilation = True
-        options.execution.shots = 10000
+        options.execution.shots = 1024
         options.optimization_level = 3
         options.resilience_level = 3
         distance_configuration = Config.execution_setup['execution_setup']['dist_calc'][0]
@@ -85,5 +86,5 @@ class CSWAPCircuit:
         rows = len(encoded_atoms.psi_reg(A, B))
         cols = len(encoded_atoms.psi_reg(A, B))
         qd = [0] * rows * cols
-        qd = np.reshape(qd, (8, 8))
+        qd = np.reshape(qd, (rows, cols))
         return cols, qd, rows, encoded_atoms

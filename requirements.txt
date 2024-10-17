@@ -1,0 +1,5 @@
+freud-analysis
+qiskit
+MDAnalysis
+qiskit-ibm-runtime
+scikit-learn
