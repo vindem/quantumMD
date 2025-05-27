@@ -15,6 +15,8 @@ from JobPersistenceManager import JobPersistenceManager
 from qiskit.compiler.transpiler import transpile
 from qiskit.circuit.library import EfficientSU2
 
+from tqdm import tqdm
+
 #NEEDED BY AQT
 from qiskit_aqt_provider import AQTProvider
 from qiskit_aqt_provider.primitives import AQTEstimator
@@ -115,6 +117,11 @@ def calc_eigval_quantum(bpm, filename):
     backend = setup_backend_for_task('eigenvalues')
     #vqe = VQE(qubit_op, variational_form, optimizer=optimizer)
 
+    progressbar = tqdm(total=eigenvalue_configuration.get('opt_iters', 1000), desc="VQE Progress", unit="iter")
+    def progress_callback(param):
+        progressbar.update(1)
+        
+
     def cost_function(params, ansatz, hamiltonian, estimator):
         try:
             if eigenvalue_configuration.get('persistence', False):
@@ -162,11 +169,13 @@ def calc_eigval_quantum(bpm, filename):
         estimator = Estimator(mode=backend)
     start = time.time()
     qubit_op = qubit_op.apply_layout(improved_ansatz.layout)
+        
     res = minimize(
         cost_function,
         x0,
         args=(improved_ansatz, qubit_op, estimator),
         method=eigenvalue_configuration['optimizer'],
+        callback=progress_callback,
         options={"maxiter": eigenvalue_configuration.get('opt_iters',1000), "tol":0.1}
         )
     end = time.time()
