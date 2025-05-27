@@ -1,5 +1,9 @@
 freud-analysis
 qiskit
+qiskit_algorithms
 MDAnalysis
 qiskit-ibm-runtime
 scikit-learn
+numpy
+qiskit-aqt-provider
+qiskit-aer

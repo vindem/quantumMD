@@ -91,19 +91,30 @@ def analyze(ref_file, traj_file, step, seg_len, json_file):
     #print(data)
 
     for i in range(n_atimes):
-        destination = 'quantum' if config_data['dist_calc'][0]['quantum'] else 'classic'
+        dist_quantum = config_data['dist_calc'][0].get('quantum', False)
+        destination = 'quantum' if dist_quantum else 'classical'  
         print("Starting "+destination+ " execution")
-        dist_func = calculate_distance_quantum if config_data['dist_calc'][0]['quantum'] else classic_euclidean_distance
+        if dist_quantum:
+            dist_func = calculate_distance_quantum
+        else: 
+            dist_func = classic_euclidean_distance
+        
         bpm = extract_bpm(segs, dist_func)
         #bpm = extract_bpm(segs, classic_euclidean_distance)
-        if config_data['dist_calc'][0]['quantum']:
+        if dist_quantum:
             num_qubits = int(math.log2(bpm.shape[0]))
             print("Inferred number of qubits: "+ str(num_qubits))
             #ansatz = globals()[ansatz_class](num_qubits)
 
-        destination = 'quantum' if config_data['eigenvalues'][0]['quantum'] else 'classic'
-        print("Calculating " + destination + " Eigenvalues:")
-        levs = calc_eigval_quantum(bpm, json_file) if config_data['eigenvalues'][0]['quantum'] else lin_alg.eigvalsh(bpm)[-1]
+        eig_quantum = config_data['eigenvalues'][0].get('quantum', False)
+        destination = 'quantum' if eig_quantum else 'classical'
+        print("Calculating " + destination + " Eigenvalues")
+        levs = []
+        if eig_quantum:
+            levs = calc_eigval_quantum(bpm, json_file)
+        else:
+            levs = lin_alg.eigvalsh(bpm)[-1]
+        
 
     largest_eig_vals_by_frame.append(levs)
     # ---------============= analysis code goes here (end)   ===========-------------------

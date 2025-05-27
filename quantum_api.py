@@ -1,15 +1,12 @@
-from qiskit_algorithms.minimum_eigensolvers import VQE
+from qiskit_aer import AerSimulator
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 import numpy as np
 from CSWAPCircuit import CSWAPCircuit
 from qiskit.providers import JobStatus
 import time
-from qiskit_aer import Aer
+
 from qiskit_ibm_runtime import QiskitRuntimeService, Estimator, Session, Options
-#from qiskit.primitives import Estimator
-from qiskit_aer.noise import NoiseModel
-from qiskit_aqt_provider import AQTProvider
-from qiskit_aqt_provider.primitives import AQTEstimator
+
 from qiskit.quantum_info import Operator, SparsePauliOp
 from scipy.optimize import minimize
 from config import Config
@@ -17,6 +14,10 @@ import math
 from JobPersistenceManager import JobPersistenceManager
 from qiskit.compiler.transpiler import transpile
 from qiskit.circuit.library import EfficientSU2
+
+#NEEDED BY AQT
+from qiskit_aqt_provider import AQTProvider
+from qiskit_aqt_provider.primitives import AQTEstimator
 
 callback_dict = {
     "prev_vector": None,
@@ -28,7 +29,7 @@ def setup_backend_for_task(task_name):
     task_setup = Config.execution_setup['execution_setup'][task_name][0]
     match task_setup['provider']:
         case 'Aer':
-            return Aer.get_backend('aer_simulator')
+            return AerSimulator()
         case 'AQT':
             provider = AQTProvider(task_setup['token'])
             backend = provider.get_backend(name=task_setup['name'])
@@ -97,7 +98,8 @@ def calculate_distance_quantum(A, B):
     #noise_model = NoiseModel.from_backend(provider.backend.ibmq_quito)
     #backend = provider.get_backend("ibex", workspace="hpqc")
     backend = setup_backend_for_task('dist_calc')
-    cswap_circuit = CSWAPCircuit(backend, 200)
+    shots = distance_configuration.get('shots', 1024)
+    cswap_circuit = CSWAPCircuit(backend, shots=shots)
     quantum_ED = cswap_circuit.execute_swap_test(A, B)
     arr = np.array(quantum_ED)
     #print(arr.shape)
@@ -115,20 +117,22 @@ def calc_eigval_quantum(bpm, filename):
 
     def cost_function(params, ansatz, hamiltonian, estimator):
         try:
-            if eigenvalue_configuration['persistence']:
+            if eigenvalue_configuration.get('persistence', False):
                 persistence_manager = JobPersistenceManager()
-            job = estimator.run(ansatz, hamiltonian, parameter_values=params)
-            if eigenvalue_configuration['persistence']:
+            pub = (ansatz, [hamiltonian], [params])
+            estimator.options.default_shots = eigenvalue_configuration.get('shots', 1024)
+            job = estimator.run(pubs=[pub])
+            if eigenvalue_configuration.get('persistence', False):
                 persistence_manager.add_id(job.job_id())
             result = job.result()
         except TimeoutError:
-            if eigenvalue_configuration['persistence']:
+            if eigenvalue_configuration.get('persistence', False):
                 job_ids = persistence_manager.active_jobs()
                 for job_id in job_ids:
                     restored_job = AQTJob.restore(job_id, access_token=eigenvalue_configuration['token'])
                     result = restored_job.result()
 
-        energy = result.values[0]
+        energy = result[0].data.evs[0]
         return energy
 
 
@@ -144,19 +148,18 @@ def calc_eigval_quantum(bpm, filename):
     #print("x0" + str(x0))
     options = Options()
     #options.transpilation.skip_transpilation = True
-    options.execution.shots = 200
-    options.optimization_level = 3
-    options.resilience_level = 3
-
+    #options.execution.shots = 200
+    #options.optimization_level = 3
+    #options.resilience_level = 3
     #estimator = Estimator(options=options)
     #callback = build_callback(improved_ansatz, qubit_op, estimator, callback_dict)
     if eigenvalue_configuration['provider'] == 'AQT':
         from qiskit_aqt_provider.aqt_job import AQTJob
         estimator = AQTEstimator(backend=backend)
     elif eigenvalue_configuration['provider'] == 'IBM':
-        estimator = Estimator(backend=backend, options={"optimization_level":3, "resilience_level": 3})
+        estimator = Estimator(mode=backend)
     else:
-        estimator = Estimator(backend=backend, options={"optimization_level": 3, "resilience_level": 3})
+        estimator = Estimator(mode=backend)
     start = time.time()
     qubit_op = qubit_op.apply_layout(improved_ansatz.layout)
     res = minimize(
@@ -164,7 +167,7 @@ def calc_eigval_quantum(bpm, filename):
         x0,
         args=(improved_ansatz, qubit_op, estimator),
         method=eigenvalue_configuration['optimizer'],
-        options={"maxiter": eigenvalue_configuration['opt_iters'], "tol":0.1}
+        options={"maxiter": eigenvalue_configuration.get('opt_iters',1000), "tol":0.1}
         )
     end = time.time()
 

@@ -40,9 +40,7 @@ class CSWAPCircuit:
 
         options = Options()
         # options.transpilation.skip_transpilation = True
-        options.execution.shots = 1024
-        options.optimization_level = 3
-        options.resilience_level = 3
+        
         distance_configuration = Config.execution_setup['execution_setup']['dist_calc'][0]
         if distance_configuration['provider'] == 'AQT':
             sampler = AQTSampler(self._backend)
@@ -50,19 +48,22 @@ class CSWAPCircuit:
             sampler = Sampler()
         try:
             job = sampler.run(qc, shots=self._shots)
-            if distance_configuration['persistence']:
-                persistence_manager = JobPersistenceManager()
-                persistence_manager.add_id(job.job_id())
+            if 'persistence' in distance_configuration.keys():
+                if distance_configuration['persistence']:
+                    persistence_manager = JobPersistenceManager()
+                    persistence_manager.add_id(job.job_id())
             result = job.result()
-            if distance_configuration['persistence']:
-                persistence_manager.remove_id(job.job_id())
+            if 'persistence' in distance_configuration.keys():
+                if distance_configuration['persistence']:
+                    persistence_manager.remove_id(job.job_id())
         #result = job.result()
         except TimeoutError:
-            if distance_configuration['persistence']:
-                job_ids = persistence_manager.active_jobs()
-                for job_id in job_ids:
-                    restored_job = AQTJob.restore(job_id, access_token=distance_configuration['token'])
-                    result = restored_job.result()
+            if 'persistence' in distance_configuration.keys():
+                if distance_configuration['persistence']:
+                    job_ids = persistence_manager.active_jobs()
+                    for job_id in job_ids:
+                        restored_job = AQTJob.restore(job_id, access_token=distance_configuration['token'])
+                        result = restored_job.result()
         countsqd = result.quasi_dists[0]
         qdsquared = abs((4 * norm ** 2 * ((countsqd[0] / self._shots) - 0.5)))
         qd = np.sqrt(qdsquared)
