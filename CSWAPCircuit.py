@@ -3,7 +3,7 @@ from VectorAmplitudeEncoder import VectorAmplitudeEncoder
 from qiskit_aqt_provider.primitives import AQTSampler
 from qiskit_aqt_provider.aqt_job import AQTJob
 from qiskit.primitives import Sampler
-from qiskit_ibm_runtime import Options
+from qiskit_ibm_runtime import Options, Session
 import numpy as np
 from config import Config
 from JobPersistenceManager import JobPersistenceManager
@@ -11,9 +11,10 @@ import quantum_api
 
 job_ids = set()
 class CSWAPCircuit:
-    def __init__(self, backend, shots):
+    def __init__(self, backend, shots, service=None):
         self._backend = backend
         self._shots = shots
+        self._service = service
         self._show_figure = True
 
     def _init_cswap_circuit(self, a, b):
@@ -42,28 +43,40 @@ class CSWAPCircuit:
         # options.transpilation.skip_transpilation = True
         
         distance_configuration = Config.execution_setup['execution_setup']['dist_calc'][0]
+
+        
         if distance_configuration['provider'] == 'AQT':
             sampler = AQTSampler(self._backend)
-        else:
-            sampler = Sampler()
-        try:
-            job = sampler.run(qc, shots=self._shots)
-            if 'persistence' in distance_configuration.keys():
-                if distance_configuration['persistence']:
-                    persistence_manager = JobPersistenceManager()
-                    persistence_manager.add_id(job.job_id())
-            result = job.result()
-            if 'persistence' in distance_configuration.keys():
-                if distance_configuration['persistence']:
-                    persistence_manager.remove_id(job.job_id())
-        #result = job.result()
-        except TimeoutError:
-            if 'persistence' in distance_configuration.keys():
-                if distance_configuration['persistence']:
-                    job_ids = persistence_manager.active_jobs()
+            try:
+                job = sampler.run(qc, shots=self._shots)
+                if 'persistence' in distance_configuration.keys():
+                    if distance_configuration['persistence']:
+                        persistence_manager = JobPersistenceManager()
+                        persistence_manager.add_id(job.job_id())
+                result = job.result()
+                if 'persistence' in distance_configuration.keys():
+                    if distance_configuration['persistence']:
+                        persistence_manager.remove_id(job.job_id())
+                            #result = job.result()
+            except TimeoutError:
+                if 'persistence' in distance_configuration.keys():
+                    if distance_configuration['persistence']:
+                        job_ids = persistence_manager.active_jobs()
                     for job_id in job_ids:
                         restored_job = AQTJob.restore(job_id, access_token=distance_configuration['token'])
                         result = restored_job.result()
+        elif distance_configuration['provider'] == 'IBM':
+            try:
+                with Session(backend=self._backend) as session:
+                    sampler = Sampler()
+                    job = sampler.run(qc, shots=self._shots)
+                    result = job.result()
+            except Exception as e:
+                print(f"Warning: session {e}")
+                
+        else:
+            result = job.result()      
+               
         countsqd = result.quasi_dists[0]
         qdsquared = abs((4 * norm ** 2 * ((countsqd[0] / self._shots) - 0.5)))
         qd = np.sqrt(qdsquared)

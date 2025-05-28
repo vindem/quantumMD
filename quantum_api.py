@@ -31,17 +31,17 @@ def setup_backend_for_task(task_name):
     task_setup = Config.execution_setup['execution_setup'][task_name][0]
     match task_setup['provider']:
         case 'Aer':
-            return AerSimulator()
+            return AerSimulator(), None
         case 'AQT':
             provider = AQTProvider(task_setup['token'])
             backend = provider.get_backend(name=task_setup['name'])
-            return backend
+            return backend, None
         case 'IBM':
             service = QiskitRuntimeService(channel='ibm_cloud',token='4ipDXUzuzfPZz3IKv8xhW_3tfLX6E87v9yOandkuC8aR',
                                            instance='crn:v1:bluemix:public:quantum-computing:us-east:a/27d177ba64364d5a8e719dea80d8f354:eb8386a7-4196-43bd-a9c4-3a2c5041864a::')
             #provider = IBMQ.get_provider(hub='ibm-q-research-2', group='tuwien-1', project='main')
             backend = service.backend(name=task_setup['name'])
-            return backend
+            return backend, service
         case _:
             raise Exception("Unknown Provider!")
 
@@ -99,9 +99,9 @@ def calculate_distance_quantum(A, B):
     #backend = Aer.get_backend('aer_simulator')
     #noise_model = NoiseModel.from_backend(provider.backend.ibmq_quito)
     #backend = provider.get_backend("ibex", workspace="hpqc")
-    backend = setup_backend_for_task('dist_calc')
+    backend, service = setup_backend_for_task('dist_calc')
     shots = distance_configuration.get('shots', 1024)
-    cswap_circuit = CSWAPCircuit(backend, shots=shots)
+    cswap_circuit = CSWAPCircuit(backend, shots=shots, service=service)
     quantum_ED = cswap_circuit.execute_swap_test(A, B)
     arr = np.array(quantum_ED)
     #print(arr.shape)
@@ -114,7 +114,7 @@ def calc_eigval_quantum(bpm, filename):
     print("Target machine: " + eigenvalue_configuration['name'] + ", " + eigenvalue_configuration['type'])
     qubit_op = SparsePauliOp.from_operator(-bpm)
     #backend = Aer.get_backend('aer_simulator')
-    backend = setup_backend_for_task('eigenvalues')
+    backend, service = setup_backend_for_task('eigenvalues')
     #vqe = VQE(qubit_op, variational_form, optimizer=optimizer)
 
     progressbar = tqdm(total=eigenvalue_configuration.get('opt_iters', 1000), desc="VQE Progress", unit="iter")
@@ -126,9 +126,12 @@ def calc_eigval_quantum(bpm, filename):
         try:
             if eigenvalue_configuration.get('persistence', False):
                 persistence_manager = JobPersistenceManager()
-            pub = (ansatz, [hamiltonian], [params])
-            estimator.options.default_shots = eigenvalue_configuration.get('shots', 1024)
-            job = estimator.run(pubs=[pub])
+            if eigenvalue_configuration.get('provider') == 'IBM':
+                pub = (ansatz, [hamiltonian], [params])
+                estimator.options.default_shots = eigenvalue_configuration.get('shots', 1024)
+                job = estimator.run(pubs=[pub])
+            elif eigenvalue_configuration.get('provider') == 'AQT':
+                job = estimator.run(circuits=[ansatz], observables=[hamiltonian], parameter_values=[params])
             if eigenvalue_configuration.get('persistence', False):
                 persistence_manager.add_id(job.job_id())
             result = job.result()
@@ -139,13 +142,16 @@ def calc_eigval_quantum(bpm, filename):
                     restored_job = AQTJob.restore(job_id, access_token=eigenvalue_configuration['token'])
                     result = restored_job.result()
 
-        energy = result[0].data.evs[0]
+        if eigenvalue_configuration.get('provider') == 'IBM':
+            energy = result[0].data.evs[0]
+        elif eigenvalue_configuration.get('provider') == 'AQT':
+            energy = result.values[0]
         return energy
 
 
 
     improved_ansatz = globals()[eigenvalue_configuration['ansatz']](int(math.log2(bpm.shape[0])))
-    improved_ansatz = transpile(improved_ansatz, backend=backend)
+    #improved_ansatz = transpile(improved_ansatz, backend=backend)
     num_params = improved_ansatz.num_parameters
     #x0 = - (np.max(qubit_op) - np.min(qubit_op)) * np.random.random(num_params) * 10.0
     #x0 = np.max(np.real(qubit_op)) * np.random.random(num_params)
@@ -176,9 +182,12 @@ def calc_eigval_quantum(bpm, filename):
         args=(improved_ansatz, qubit_op, estimator),
         method=eigenvalue_configuration['optimizer'],
         callback=progress_callback,
-        options={"maxiter": eigenvalue_configuration.get('opt_iters',1000), "tol":0.1}
+        options={"maxiter": eigenvalue_configuration.get('opt_iters',1000), 
+                 "tol":eigenvalue_configuration.get('tolerance',0.1)}
         )
     end = time.time()
-
+    progressbar.close()
+    if progressbar.n < progressbar.total:
+        print("VQE reached the required tolerance. Stopping early.")
     #print("FINAL: "+ str(np.real(-res.fun)))
     return [-(np.real(res.fun)), end - start]
