@@ -26,7 +26,7 @@ global config_data
 an_times = []
 an_write_times = []
 n_processes=4
-n_atimes=10
+n_atimes=5
 
 def extract_bpm(segs, dist_function):
     print("Extracting distance matrix")
@@ -181,8 +181,8 @@ if __name__ == "__main__":
 
     classic_LEBM = analyze(ref_file, traj_file, step, seg_len, json_file)
 
-    print("Classic: "+str(classic_LEBM))
-    print("Quantum: "+str(q_eig))
+    print("Classic: "+str(classic_LEBM[0]))
+    print("Quantum: "+str(q_eig[0]))
     job_persistance_manager = JobPersistenceManager()
     job_persistance_manager.clear_all()
     #else:

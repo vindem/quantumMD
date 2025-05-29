@@ -8,6 +8,7 @@ import numpy as np
 from config import Config
 from JobPersistenceManager import JobPersistenceManager
 import quantum_api
+import matplotlib.pyplot as plt
 
 job_ids = set()
 class CSWAPCircuit:
@@ -32,6 +33,11 @@ class CSWAPCircuit:
         qc.h(q1[0])
         qc.barrier()
         qc.measure(q1, c)
+        if self._show_figure:
+            fig = qc.draw(output='mpl', idle_wires=False, fold=-1)
+            fig.suptitle('CSWAP Circuit (Distance Calculation)')
+            plt.show()
+            self._show_figure = False  # Show the figure only once
 
         return qc
 
